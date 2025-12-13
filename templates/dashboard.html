@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-speedometer2 me-2"></i> Bảng điều khiển</h2>
+            <div>
+                <span class="text-muted me-3">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    {{ now().strftime('%d/%m/%Y') }}
+                </span>
+                <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise"></i> Làm mới
+                </button>
+            </div>
+        </div>
+        <p class="text-muted">Tổng quan về hoạt động kho hàng</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card fade-in" style="animation-delay: 0.1s">
+            <div class="card-icon bg-primary">
+                <i class="bi bi-box"></i>
+            </div>
+            <h3 class="stat-value" data-counter="{{ total_products }}">0</h3>
+            <p class="stat-label">Tổng sản phẩm</p>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card fade-in" style="animation-delay: 0.2s">
+            <div class="card-icon bg-success">
+                <i class="bi bi-arrow-down-circle"></i>
+            </div>
+            <h3 class="stat-value">{{ total_value }} đ</h3>
+            <p class="stat-label">Tổng giá trị tồn kho</p>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card fade-in" style="animation-delay: 0.3s">
+            <div class="card-icon bg-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h3 class="stat-value" data-counter="{{ low_stock }}">0</h3>
+            <p class="stat-label">Sản phẩm sắp hết</p>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card fade-in" style="animation-delay: 0.4s">
+            <div class="card-icon bg-danger">
+                <i class="bi bi-activity"></i>
+            </div>
+            <h3 class="stat-value">24</h3>
+            <p class="stat-label">Giao dịch hôm nay</p>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="table-container">
+            <div class="table-header">
+                <h5><i class="bi bi-graph-up me-2"></i> Biến động tồn kho 6 tháng</h5>
+            </div>
+            <div class="p-3">
+                <canvas id="stockChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="table-container">
+            <div class="table-header">
+                <h5><i class="bi bi-pie-chart me-2"></i> Phân loại sản phẩm</h5>
+            </div>
+            <div class="p-3">
+                <canvas id="categoryChart" data-categories='{{ categories|map(attribute="category")|list|tojson }}'
+                    data-counts='{{ categories|map(attribute="count")|list|tojson }}' height="250">
+                </canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity & Low Stock -->
+<div class="row g-4">
+    <div class="col-xl-8">
+        <div class="table-container">
+            <div class="table-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-clock-history me-2"></i> Giao dịch gần đây</h5>
+                <a href="/reports" class="btn btn-sm btn-light">Xem tất cả</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>Sản phẩm</th>
+                            <th>Loại</th>
+                            <th>Số lượng</th>
+                            <th>Người thực hiện</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in recent_transactions %}
+                        <tr class="slide-in">
+                            <td>{{ transaction['created_at'][:16] }}</td>
+                            <td>{{ transaction['product_name'] }}</td>
+                            <td>
+                                <span
+                                    class="badge {% if transaction['type'] == 'in' %}badge-success{% else %}badge-danger{% endif %}">
+                                    {{ 'Nhập kho' if transaction['type'] == 'in' else 'Xuất kho' }}
+                                </span>
+                            </td>
+                            <td>{{ transaction['quantity'] }}</td>
+                            <td>{{ transaction['full_name'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="table-container">
+            <div class="table-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-exclamation-triangle me-2"></i> Sản phẩm sắp hết</h5>
+                <span class="badge bg-danger">{{ low_stock_items|length }}</span>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for item in low_stock_items %}
+                <div class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ item['name'] }}</h6>
+                        <small class="text-danger">{{ item['stock'] }}/{{ item['min_stock'] }}</small>
+                    </div>
+                    <small class="text-muted">{{ item['supplier'] }}</small>
+                    <div class="progress mt-2">
+                        <div class="progress-bar bg-danger"
+                            style="width: {{ (item['stock'] / item['min_stock'] * 100)|int }}%">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if low_stock_items|length == 0 %}
+            <div class="text-center py-4">
+                <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">Tất cả sản phẩm đều đủ số lượng!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeCharts();
+    });
+</script>
+{% endblock %}

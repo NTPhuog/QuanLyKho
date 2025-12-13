@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-person-circle me-2"></i>
+            Thông tin {% if user.role == 'admin' %}quản trị{% else %}cá nhân{% endif %}
+        </h2>
+        <p class="text-muted">Quản lý thông tin tài khoản của bạn</p>
+    </div>
+</div>
+
+{% if request.query_params.get('success') %}
+<div class="alert alert-success alert-dismissible fade show">
+    <i class="bi bi-check-circle me-2"></i>
+    Đã cập nhật thông tin thành công!
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+{% if request.query_params.get('error') %}
+<div class="alert alert-danger alert-dismissible fade show">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    {{ request.query_params.get('error') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="avatar-lg mb-3">
+                    {% if user.role == 'admin' %}
+                    <i class="bi bi-shield-check" style="font-size: 5rem; color: #e74c3c;"></i>
+                    {% else %}
+                    <i class="bi bi-person-badge" style="font-size: 5rem; color: #4361ee;"></i>
+                    {% endif %}
+                </div>
+                <h4>{{ user.full_name }}</h4>
+                <p class="text-muted">{{ user.email }}</p>
+                <span class="badge {% if user.role == 'admin' %}bg-danger{% else %}bg-primary{% endif %} fs-6 p-2">
+                    <i class="bi bi-{% if user.role == 'admin' %}shield-check{% else %}person{% endif %} me-1"></i>
+                    {{ 'Quản trị viên' if user.role == 'admin' else 'Nhân viên' }}
+                </span>
+
+                <div class="mt-4 text-start">
+                    <p><i class="bi bi-telephone me-2"></i> {{ user.phone or 'Chưa cập nhật' }}</p>
+                    <p><i class="bi bi-geo-alt me-2"></i> {{ user.address or 'Chưa cập nhật' }}</p>
+                    {% if user.created_at %}
+                    <p><i class="bi bi-calendar me-2"></i> Tham gia: {{ user.created_at[:10] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if user.role == 'admin' %}
+        <div class="card mt-3 border-danger">
+            <div class="card-body">
+                <h5><i class="bi bi-shield-lock text-danger me-2"></i> Quyền hạn Admin</h5>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Duyệt sản phẩm nhân viên</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Quản lý người dùng hệ thống</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Xem tất cả báo cáo chi tiết</li>
+                    <li><i class="bi bi-check-circle text-success me-1"></i> Quản lý cài đặt hệ thống</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div
+                class="card-header {% if user.role == 'admin' %}bg-danger text-white{% else %}bg-primary text-white{% endif %}">
+                <h5 class="mb-0"><i class="bi bi-gear me-2"></i> Cập nhật thông tin</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/profile/update">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Họ và tên</label>
+                            <input type="text" class="form-control" name="full_name" value="{{ user.full_name }}"
+                                required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" value="{{ user.email }}" disabled>
+                            <small class="text-muted">Email không thể thay đổi</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="text" class="form-control" name="phone" value="{{ user.phone or '' }}"
+                                placeholder="Nhập số điện thoại">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Địa chỉ</label>
+                            <input type="text" class="form-control" name="address" value="{{ user.address or '' }}"
+                                placeholder="Nhập địa chỉ">
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <h5><i class="bi bi-lock me-2"></i> Đổi mật khẩu</h5>
+                            <p class="text-muted small">Để trống nếu không muốn đổi mật khẩu</p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Mật khẩu hiện tại</label>
+                            <input type="password" class="form-control" name="current_password"
+                                placeholder="Nhập mật khẩu hiện tại">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Mật khẩu mới</label>
+                            <input type="password" class="form-control" name="new_password"
+                                placeholder="Nhập mật khẩu mới">
+                        </div>
+
+                        <div class="col-12 mt-3">
+                            <button type="submit"
+                                class="btn {% if user.role == 'admin' %}btn-danger{% else %}btn-primary{% endif %}">
+                                <i class="bi bi-save me-1"></i> Lưu thay đổi
+                            </button>
+                            <a href="/dashboard" class="btn btn-outline-secondary ms-2">
+                                <i class="bi bi-arrow-left me-1"></i> Quay lại
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if user.role == 'admin' and stats %}
+        <!-- Thống kê cho admin -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="card-icon bg-primary">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h3 class="stat-value">{{ stats.total_users or 0 }}</h3>
+                    <p class="stat-label">Tổng người dùng</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="card-icon bg-success">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h3 class="stat-value">{{ stats.admin_count or 0 }}</h3>
+                    <p class="stat-label">Quản trị viên</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="card-icon bg-info">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <h3 class="stat-value">{{ stats.staff_count or 0 }}</h3>
+                    <p class="stat-label">Nhân viên</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="card-icon bg-warning">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <h3 class="stat-value">{{ stats.pending_products or 0 }}</h3>
+                    <p class="stat-label">Chờ duyệt</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Focus on first input field
+        document.querySelector('input[name="full_name"]').focus();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="vi" data-bs-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Hệ thống quản lý kho</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fb;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white !important;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: 3px 0 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 30px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header .logo {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .user-profile {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid white;
+            margin: 0 auto 10px;
+            object-fit: cover;
+        }
+
+        .user-info h5 {
+            color: white;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .user-info .badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 30px 0 0;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 5px;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left: 3px solid white;
+        }
+
+        .sidebar-menu a.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-left: 3px solid white;
+        }
+
+        .sidebar-menu i {
+            width: 25px;
+            font-size: 1.1rem;
+            margin-right: 10px;
+        }
+
+        .sidebar-menu .badge {
+            margin-left: auto;
+            font-size: 0.7rem;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .stat-card .card-icon.bg-primary {
+            background: linear-gradient(45deg, var(--primary-color), #5a7dff);
+        }
+
+        .stat-card .card-icon.bg-success {
+            background: linear-gradient(45deg, var(--success-color), #4cd97b);
+        }
+
+        .stat-card .card-icon.bg-warning {
+            background: linear-gradient(45deg, var(--warning-color), #ffb347);
+        }
+
+        .stat-card .card-icon.bg-danger {
+            background: linear-gradient(45deg, var(--danger-color), #ff6b6b);
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        #pending-count {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <a href="/dashboard" class="logo">
+                <i class="bi bi-box-seam"></i> WarehousePro
+            </a>
+        </div>
+
+        {% if user %}
+        <div class="user-profile">
+            <img src="{{ user.get('avatar', '/static/img/avatars/default.png') }}" class="avatar"
+                alt="{{ user.full_name }}">
+            <div class="user-info mt-2">
+                <h5>{{ user.full_name }}</h5>
+                <span class="badge {% if user.role == 'admin' %}bg-danger{% else %}bg-primary{% endif %}">
+                    {{ 'Quản trị viên' if user.role == 'admin' else 'Nhân viên' }}
+                </span>
+            </div>
+        </div>
+        {% endif %}
+
+        <ul class="sidebar-menu">
+            <li>
+                <a href="/dashboard" class="{% if request.url.path == '/dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i> Bảng điều khiển
+                </a>
+            </li>
+            <li>
+                <a href="/products"
+                    class="{% if request.url.path.startswith('/products') and not request.url.path.startswith('/admin/approve') %}active{% endif %}">
+                    <i class="bi bi-box"></i> Quản lý sản phẩm
+                    {% if user and user.role == 'staff' %}
+                    <span class="badge bg-warning" id="staff-pending-count">0</span>
+                    {% endif %}
+                </a>
+            </li>
+
+            {% if user and user.role == 'admin' %}
+            <li>
+                <a href="/admin/approve-products"
+                    class="{% if request.url.path == '/admin/approve-products' %}active{% endif %}">
+                    <i class="bi bi-check-circle"></i> Duyệt sản phẩm
+                    <span class="badge bg-danger" id="pending-count">0</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/users" class="{% if request.url.path == '/admin/users' %}active{% endif %}">
+                    <i class="bi bi-people"></i> Quản lý người dùng
+                </a>
+            </li>
+            {% endif %}
+
+            <li>
+                <a href="/reports" class="{% if request.url.path == '/reports' %}active{% endif %}">
+                    <i class="bi bi-graph-up"></i> Báo cáo
+                </a>
+            </li>
+            <li>
+                <a href="/profile" class="{% if request.url.path == '/profile' %}active{% endif %}">
+                    <i class="bi bi-person"></i> Thông tin cá nhân
+                </a>
+            </li>
+            <li class="mt-4">
+                <a href="/logout" class="text-danger">
+                    <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm rounded mb-4">
+            <div class="container-fluid">
+                <button class="navbar-toggler d-lg-none" type="button" onclick="toggleSidebar()">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="d-flex align-items-center">
+                    <span class="navbar-brand mb-0 h1 d-none d-lg-block">
+                        <i class="bi bi-box-seam me-2"></i>
+                        {{ title }}
+                    </span>
+                    <div class="ms-3">
+                        <span
+                            class="badge {% if user and user.role == 'admin' %}bg-danger{% else %}bg-primary{% endif %}">
+                            {{ 'Quản trị viên' if user and user.role == 'admin' else 'Nhân viên' }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center">
+                    <span class="text-muted me-3 d-none d-md-block">
+                        <i class="bi bi-person-circle me-1"></i>
+                        {{ user.full_name if user else '' }}
+                    </span>
+                    <button class="btn btn-outline-secondary btn-sm me-2" onclick="toggleDarkMode()">
+                        <i class="bi bi-moon"></i>
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-bell"></i>
+                            {% if user and user.role == 'admin' %}
+                            <span class="badge bg-danger rounded-pill" id="nav-pending-count">0</span>
+                            {% endif %}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <h6 class="dropdown-header">Thông báo</h6>
+                            </li>
+                            {% if user and user.role == 'admin' %}
+                            <li>
+                                <a class="dropdown-item text-danger" href="/admin/approve-products">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span id="notif-pending-count">0</span> sản phẩm chờ duyệt
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-in-down me-2"></i> Đơn hàng
+                                    mới</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-exclamation-triangle me-2"></i> Sản
+                                    phẩm sắp hết</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/profile"><i class="bi bi-gear me-2"></i> Cài đặt</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container-fluid">
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-5 pt-4 border-top">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="bi bi-box-seam"></i> WarehousePro</h5>
+                    <p class="text-muted">
+                        {% if user %}
+                        Xin chào <strong>{{ user.full_name }}</strong> -
+                        {{ 'Quản trị viên' if user.role == 'admin' else 'Nhân viên' }}
+                        {% else %}
+                        Hệ thống quản lý kho hàng thông minh & chuyên nghiệp
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p class="text-muted">
+                        © 2024 WarehousePro. Phiên bản 2.0<br>
+                        <small>Hệ thống quản lý kho hiện đại</small>
+                    </p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS -->
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+
+        document.addEventListener('click', function (event) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggleBtn = document.querySelector('.navbar-toggler');
+
+            if (window.innerWidth <= 992 &&
+                sidebar.classList.contains('active') &&
+                !sidebar.contains(event.target) &&
+                !toggleBtn.contains(event.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Khởi tạo tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Auto-dismiss alerts
+            setTimeout(function () {
+                var alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+                alerts.forEach(function (alert) {
+                    bootstrap.Alert.getInstance(alert)?.close();
+                });
+            }, 5000);
+
+            // Confirmation for delete actions
+            const deleteButtons = document.querySelectorAll('.btn-delete');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function (e) {
+                    if (!confirm('Bạn có chắc chắn muốn xóa mục này?')) {
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            // Live search
+            const searchInput = document.querySelector('#search-input');
+            if (searchInput) {
+                let searchTimeout;
+                searchInput.addEventListener('input', function () {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(function () {
+                        searchInput.form.submit();
+                    }, 500);
+                });
+            }
+
+            // Update pending counts
+            updatePendingCounts();
+            setInterval(updatePendingCounts, 30000); // Update every 30 seconds
+        });
+
+        function updatePendingCounts() {
+            // For admin
+            fetch('/api/pending-count')
+                .then(response => response.json())
+                .then(data => {
+                    const adminBadge = document.getElementById('pending-count');
+                    const navBadge = document.getElementById('nav-pending-count');
+                    const notifBadge = document.getElementById('notif-pending-count');
+
+                    if (data.admin_pending > 0) {
+                        if (adminBadge) adminBadge.textContent = data.admin_pending;
+                        if (navBadge) navBadge.textContent = data.admin_pending;
+                        if (notifBadge) notifBadge.textContent = data.admin_pending;
+
+                        // Title notification
+                        if (data.admin_pending > 0 && document.hidden) {
+                            document.title = `(${data.admin_pending}) ${document.title.replace(/^\(\d+\)\s*/, '')}`;
+                        }
+                    } else {
+                        if (adminBadge) adminBadge.style.display = 'none';
+                        if (navBadge) navBadge.style.display = 'none';
+                        if (notifBadge) notifBadge.textContent = '0';
+                        document.title = document.title.replace(/^\(\d+\)\s*/, '');
+                    }
+
+                    // For staff
+                    const staffBadge = document.getElementById('staff-pending-count');
+                    if (staffBadge && data.staff_pending > 0) {
+                        staffBadge.textContent = data.staff_pending;
+                        staffBadge.style.display = 'inline-block';
+                    } else if (staffBadge) {
+                        staffBadge.style.display = 'none';
+                    }
+                })
+                .catch(error => console.log('Error fetching pending counts:', error));
+        }
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

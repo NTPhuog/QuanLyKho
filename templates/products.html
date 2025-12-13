@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-box me-2"></i> Quản lý sản phẩm</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                <i class="bi bi-plus-circle me-1"></i> Thêm sản phẩm
+            </button>
+        </div>
+        <p class="text-muted">Quản lý danh sách sản phẩm trong kho</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="form-control" id="search-input" name="search"
+                        placeholder="Tìm kiếm sản phẩm..." value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="category">
+                    <option value="">Tất cả danh mục</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat['category'] }}" {% if selected_category==cat['category'] %}selected{% endif
+                        %}>
+                        {{ cat['category'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="min_stock">
+                    <option value="">Tất cả mức tồn kho</option>
+                    <option value="5" {% if min_stock=='5' %}selected{% endif %}>
+                        Sắp hết hàng (≤ 5)
+                    </option>
+                    <option value="10" {% if min_stock=='10' %}selected{% endif %}>
+                        Tồn kho thấp (≤ 10)
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-funnel"></i> Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div class="table-container">
+    <div class="table-header d-flex justify-content-between align-items-center">
+        <h5><i class="bi bi-list-check me-2"></i> Danh sách sản phẩm ({{ products|length }})</h5>
+        <div>
+            <button class="btn btn-sm btn-outline-secondary me-2"
+                onclick="exportToCSV('productsTable', 'products.csv')">
+                <i class="bi bi-download"></i> Xuất CSV
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="printPage()">
+                <i class="bi bi-printer"></i> In
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover" id="productsTable">
+            <thead>
+                <tr>
+                    <th width="50">#</th>
+                    <th>Tên sản phẩm</th>
+                    <th>SKU</th>
+                    <th>Danh mục</th>
+                    <th>Tồn kho</th>
+                    <th>Giá (VNĐ)</th>
+                    <th>Vị trí</th>
+                    <th>Nhà cung cấp</th>
+                    <th>Trạng thái</th>
+                    <th width="150">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <strong>{{ product['name'] }}</strong>
+                        {% if product['description'] %}
+                        <small class="text-muted d-block">{{ product['description'][:50] }}...</small>
+                        {% endif %}
+                    </td>
+                    <td><code>{{ product['sku'] }}</code></td>
+                    <td>
+                        <span class="badge bg-info">{{ product['category'] }}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="fw-bold me-2">{{ product['stock'] }}</span>
+                            <small class="text-muted">/ {{ product['min_stock'] }}</small>
+                        </div>
+                        <div class="progress" style="height: 3px; width: 80px;">
+                            <div class="progress-bar 
+                                {% if product['stock'] <= product['min_stock'] %}bg-danger
+                                {% elif product['stock'] <= product['min_stock'] * 2 %}bg-warning
+                                {% else %}bg-success{% endif %}"
+                                style="width: {{ (product['stock'] / (product['min_stock'] * 3) * 100)|int }}%">
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ "{:,.0f}".format(product['price'] or 0) }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark">
+                            <i class="bi bi-geo-alt"></i> {{ product['location'] }}
+                        </span>
+                    </td>
+                    <td>{{ product['supplier'] }}</td>
+                    <td>
+                        {% if product['stock'] <= product['min_stock'] %} <span class="badge bg-danger">Sắp hết</span>
+                            {% elif product['stock'] <= product['min_stock'] * 2 %} <span class="badge bg-warning">Tồn
+                                kho thấp</span>
+                                {% else %}
+                                <span class="badge bg-success">Đủ hàng</span>
+                                {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-icon" data-bs-toggle="modal"
+                                data-bs-target="#updateStockModal{{ product['id'] }}" title="Cập nhật tồn kho">
+                                <i class="bi bi-arrow-left-right"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-icon" data-bs-toggle="modal"
+                                data-bs-target="#viewProductModal{{ product['id'] }}" title="Xem chi tiết">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            {% if user and user['role'] == 'admin' %}
+                            <a href="/products/{{ product['id'] }}/delete"
+                                class="btn btn-outline-danger btn-icon btn-delete" title="Xóa sản phẩm">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Update Stock Modal -->
+                <div class="modal fade" id="updateStockModal{{ product['id'] }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Cập nhật tồn kho</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="post" action="/products/{{ product['id'] }}/update" class="stock-update-form">
+                                <div class="modal-body">
+                                    <p><strong>Sản phẩm:</strong> {{ product['name'] }}</p>
+                                    <p><strong>Tồn kho hiện tại:</strong> {{ product['stock'] }}</p>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Loại giao dịch</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="type" id="in{{ product['id'] }}"
+                                                value="in" checked>
+                                            <label class="btn btn-outline-success" for="in{{ product['id'] }}">
+                                                <i class="bi bi-box-arrow-in-down"></i> Nhập kho
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="type"
+                                                id="out{{ product['id'] }}" value="out">
+                                            <label class="btn btn-outline-danger" for="out{{ product['id'] }}">
+                                                <i class="bi bi-box-arrow-up"></i> Xuất kho
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Số lượng</label>
+                                        <input type="number" class="form-control" name="stock_change" min="1" required
+                                            data-current-stock="{{ product['stock'] }}">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Ghi chú</label>
+                                        <textarea class="form-control" name="notes" rows="2"
+                                            placeholder="Nhập ghi chú..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                    <button type="submit" class="btn btn-primary">Cập nhật</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View Product Modal -->
+                <div class="modal fade" id="viewProductModal{{ product['id'] }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Chi tiết sản phẩm</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h4>{{ product['name'] }}</h4>
+                                        <p class="text-muted">{{ product['description'] or 'Không có mô tả' }}</p>
+
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <th width="150">SKU:</th>
+                                                <td><code>{{ product['sku'] }}</code></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Danh mục:</th>
+                                                <td>{{ product['category'] }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Tồn kho:</th>
+                                                <td>
+                                                    <span class="fw-bold">{{ product['stock'] }}</span>
+                                                    <small class="text-muted">/ {{ product['min_stock'] }} (tối
+                                                        thiểu)</small>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th>Giá:</th>
+                                                <td>{{ "{:,.0f}".format(product['price'] or 0) }} VNĐ</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Vị trí:</th>
+                                                <td>{{ product['location'] }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Nhà cung cấp:</th>
+                                                <td>{{ product['supplier'] }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Cập nhật lần cuối:</th>
+                                                <td>{{ product['last_updated'] }}</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <div class="display-1 text-muted mb-3">
+                                                    <i class="bi bi-box"></i>
+                                                </div>
+                                                <h5>Trạng thái</h5>
+                                                {% if product['stock'] <= product['min_stock'] %} <span
+                                                    class="badge bg-danger fs-6 p-2 mb-2">Sắp hết hàng</span>
+                                                    <p class="text-danger small">Cần nhập thêm hàng!</p>
+                                                    {% elif product['stock'] <= product['min_stock'] * 2 %} <span
+                                                        class="badge bg-warning fs-6 p-2 mb-2">Tồn kho thấp</span>
+                                                        {% else %}
+                                                        <span class="badge bg-success fs-6 p-2 mb-2">Đủ hàng</span>
+                                                        {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if products|length == 0 %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox" style="font-size: 4rem; color: #dee2e6;"></i>
+            <h4 class="mt-3 text-muted">Không tìm thấy sản phẩm</h4>
+            <p class="text-muted">Thử thay đổi bộ lọc hoặc thêm sản phẩm mới</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm sản phẩm mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="/products/add">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Tên sản phẩm *</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">SKU (Mã sản phẩm) *</label>
+                            <input type="text" class="form-control" name="sku" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Danh mục *</label>
+                            <select class="form-select" name="category" required>
+                                <option value="">Chọn danh mục</option>
+                                <option value="Điện tử">Điện tử</option>
+                                <option value="Phụ kiện">Phụ kiện</option>
+                                <option value="Linh kiện">Linh kiện</option>
+                                <option value="Văn phòng phẩm">Văn phòng phẩm</option>
+                                <option value="Gia dụng">Gia dụng</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Giá (VNĐ)</label>
+                            <input type="number" class="form-control" name="price" step="1000">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tồn kho *</label>
+                            <input type="number" class="form-control" name="stock" required min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tồn kho tối thiểu *</label>
+                            <input type="number" class="form-control" name="min_stock" required min="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Vị trí trong kho</label>
+                            <input type="text" class="form-control" name="location" placeholder="Ví dụ: Kệ A1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nhà cung cấp</label>
+                            <input type="text" class="form-control" name="supplier">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Mô tả sản phẩm</label>
+                            <textarea class="form-control" name="description" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Thêm sản phẩm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

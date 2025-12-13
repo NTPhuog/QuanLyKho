@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-graph-up me-2"></i> Báo cáo & Thống kê</h2>
+        <p class="text-muted">Phân tích và báo cáo chi tiết hoạt động kho hàng</p>
+    </div>
+</div>
+
+<!-- Report Type Selector -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="btn-group w-100" role="group">
+            cd C:\Users\Lenovo\Downloads\dc <a href="/reports?type=daily"
+                class="btn {% if report_type == 'daily' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                <i class="bi bi-calendar-day me-1"></i> Hằng ngày
+            </a>
+            <a href="/reports?type=products"
+                class="btn {% if report_type == 'products' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                <i class="bi bi-box me-1"></i> Theo sản phẩm
+            </a>
+            <a href="/reports?type=suppliers"
+                class="btn {% if report_type == 'suppliers' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                <i class="bi bi-truck me-1"></i> Theo nhà cung cấp
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Report Content -->
+<div class="table-container">
+    <div class="table-header d-flex justify-content-between align-items-center">
+        <h5>
+            {% if report_type == 'daily' %}
+            <i class="bi bi-calendar-day me-2"></i> Báo cáo giao dịch hằng ngày
+            {% elif report_type == 'products' %}
+            <i class="bi bi-box me-2"></i> Báo cáo theo danh mục sản phẩm
+            {% else %}
+            <i class="bi bi-truck me-2"></i> Báo cáo theo nhà cung cấp
+            {% endif %}
+        </h5>
+        <span class="badge bg-primary">{{ report_data|length }} bản ghi</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover" id="reportTable">
+            <thead>
+                {% if report_type == 'daily' %}
+                <tr>
+                    <th>Ngày</th>
+                    <th>Số giao dịch</th>
+                    <th>Nhập kho</th>
+                    <th>Xuất kho</th>
+                    <th>Chênh lệch</th>
+                </tr>
+                {% elif report_type == 'products' %}
+                <tr>
+                    <th>Danh mục</th>
+                    <th>Số sản phẩm</th>
+                    <th>Tổng tồn kho</th>
+                    <th>Giá trị tồn kho</th>
+                    <th>Tỷ lệ</th>
+                </tr>
+                {% else %}
+                <tr>
+                    <th>Nhà cung cấp</th>
+                    <th>Số sản phẩm</th>
+                    <th>Tổng tồn kho</th>
+                </tr>
+                {% endif %}
+            </thead>
+            <tbody>
+                {% for row in report_data %}
+                <tr>
+                    {% if report_type == 'daily' %}
+                    <td>{{ row['date'] }}</td>
+                    <td>{{ row['transactions'] }}</td>
+                    <td class="text-success">+{{ row['stock_in'] }}</td>
+                    <td class="text-danger">-{{ row['stock_out'] }}</td>
+                    <td>
+                        {% set diff = row['stock_in'] - row['stock_out'] %}
+                        <span class="{% if diff > 0 %}text-success{% elif diff < 0 %}text-danger{% endif %}">
+                            {% if diff > 0 %}+{% endif %}{{ diff }}
+                        </span>
+                    </td>
+
+                    {% elif report_type == 'products' %}
+                    <td>
+                        <span class="badge bg-info">{{ row['category'] }}</span>
+                    </td>
+                    <td>{{ row['product_count'] }}</td>
+                    <td>{{ row['total_stock'] }}</td>
+                    <td>{{ "{:,.0f}".format(row['total_value'] or 0) }} đ</td>
+                    <td>
+                        <div class="progress">
+                            <div class="progress-bar bg-primary"
+                                style="width: {{ (row['product_count'] / report_data|length * 100)|int }}%">
+                            </div>
+                        </div>
+                        <small>{{ (row['product_count'] / report_data|length * 100)|int }}%</small>
+                    </td>
+
+                    {% else %}
+                    <td>{{ row['supplier'] }}</td>
+                    <td>{{ row['product_count'] }}</td>
+                    <td>{{ row['total_stock'] }}</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if report_data|length == 0 %}
+        <div class="text-center py-5">
+            <i class="bi bi-clipboard-x" style="font-size: 4rem; color: #dee2e6;"></i>
+            <h4 class="mt-3 text-muted">Không có dữ liệu báo cáo</h4>
+            <p class="text-muted">Chọn loại báo cáo khác hoặc thay đổi khoảng thời gian</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-white-50">Tổng giao dịch</h6>
+                        <h3>{{ report_data|length }}</h3>
+                    </div>
+                    <div class="display-4">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-white-50">Tổng nhập kho</h6>
+                        <h3>
+                            {% if report_type == 'daily' %}
+                            {{ report_data|sum(attribute='stock_in') }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </h3>
+                    </div>
+                    <div class="display-4">
+                        <i class="bi bi-arrow-down-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-white-50">Tổng xuất kho</h6>
+                        <h3>
+                            {% if report_type == 'daily' %}
+                            {{ report_data|sum(attribute='stock_out') }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </h3>
+                    </div>
+                    <div class="display-4">
+                        <i class="bi bi-arrow-up-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-white-50">Tỷ lệ tăng trưởng</h6>
+                        <h3>+12.5%</h3>
+                    </div>
+                    <div class="display-4">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

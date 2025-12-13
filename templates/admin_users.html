@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-people me-2"></i> Quản lý người dùng</h2>
+        <p class="text-muted">Quản lý tài khoản hệ thống</p>
+    </div>
+</div>
+
+<!-- Add User Form -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-person-plus me-2"></i> Thêm người dùng mới</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" action="/admin/users/add" class="row g-3">
+            <div class="col-md-3">
+                <input type="text" class="form-control" name="full_name" placeholder="Họ và tên" required>
+            </div>
+            <div class="col-md-3">
+                <input type="email" class="form-control" name="email" placeholder="Email" required>
+            </div>
+            <div class="col-md-2">
+                <input type="password" class="form-control" name="password" placeholder="Mật khẩu" required>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="role" required>
+                    <option value="">Chọn vai trò</option>
+                    <option value="admin">Quản trị viên</option>
+                    <option value="staff">Nhân viên</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-success w-100">
+                    <i class="bi bi-plus-circle"></i> Thêm
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="table-container">
+    <div class="table-header">
+        <h5><i class="bi bi-list-check me-2"></i> Danh sách người dùng</h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Họ và tên</th>
+                    <th>Email</th>
+                    <th>Vai trò</th>
+                    <th>Ngày tạo</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td>
+                        <strong>{{ u.full_name }}</strong>
+                        {% if u.id == user.id %}
+                        <span class="badge bg-info">Bạn</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                        {% if u.role == 'admin' %}
+                        <span class="badge bg-danger">Quản trị viên</span>
+                        {% else %}
+                        <span class="badge bg-primary">Nhân viên</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.created_at[:10] }}</td>
+                    <td>
+                        {% if u.id != user.id %}
+                        <a href="/admin/users/{{ u.id }}/delete" class="btn btn-sm btn-outline-danger btn-delete">
+                            <i class="bi bi-trash"></i> Xóa
+                        </a>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
