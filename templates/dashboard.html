@@ -26,7 +26,7 @@
             <div class="card-icon bg-primary">
                 <i class="bi bi-box"></i>
             </div>
-            <h3 class="stat-value" data-counter="{{ total_products }}">0</h3>
+            <h3 class="stat-value">{{ total_products }}</h3>
             <p class="stat-label">Tổng sản phẩm</p>
         </div>
     </div>
@@ -44,7 +44,7 @@
             <div class="card-icon bg-warning">
                 <i class="bi bi-exclamation-triangle"></i>
             </div>
-            <h3 class="stat-value" data-counter="{{ low_stock }}">0</h3>
+            <h3 class="stat-value">{{ low_stock }}</h3>
             <p class="stat-label">Sản phẩm sắp hết</p>
         </div>
     </div>
@@ -53,7 +53,7 @@
             <div class="card-icon bg-danger">
                 <i class="bi bi-activity"></i>
             </div>
-            <h3 class="stat-value">24</h3>
+            <h3 class="stat-value">{{ transactions_today }}</h3>
             <p class="stat-label">Giao dịch hôm nay</p>
         </div>
     </div>
@@ -161,7 +161,66 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Khởi tạo biểu đồ
         initializeCharts();
     });
+
+    async function initializeCharts() {
+        // 1. Biểu đồ Phân loại sản phẩm (Doughnut Chart)
+        const catCanvas = document.getElementById('categoryChart');
+        if (catCanvas) {
+            const categories = JSON.parse(catCanvas.dataset.categories);
+            const counts = JSON.parse(catCanvas.dataset.counts);
+            
+            new Chart(catCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: [
+                            '#4361ee', '#3a0ca3', '#7209b7', '#f72585', '#4cc9f0', '#2ecc71'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // 2. Biểu đồ Biến động tồn kho (Bar Chart) - Lấy dữ liệu từ API
+        const stockCanvas = document.getElementById('stockChart');
+        if (stockCanvas) {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                new Chart(stockCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: data.months,
+                        datasets: [
+                            { label: 'Nhập kho', data: data.in_qty, backgroundColor: '#2ecc71', borderRadius: 4 },
+                            { label: 'Xuất kho', data: data.out_qty, backgroundColor: '#e74c3c', borderRadius: 4 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } },
+                        scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4] } }, x: { grid: { display: false } } }
+                    }
+                });
+            } catch (error) {
+                console.error('Lỗi tải dữ liệu biểu đồ:', error);
+            }
+        }
+    }
 </script>
 {% endblock %}

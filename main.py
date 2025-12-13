@@ -242,6 +242,18 @@ async def dashboard(request: Request):
         approved_products = 0
         total_staff = 0
     
+    # Lấy số giao dịch hôm nay
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    if user["role"] == "admin":
+        cursor.execute("SELECT COUNT(*) FROM transactions WHERE date(created_at) = ?", (today_str,))
+    else:
+        cursor.execute('''
+            SELECT COUNT(*) FROM transactions t 
+            JOIN products p ON t.product_id = p.id 
+            WHERE date(t.created_at) = ? AND p.added_by = ?
+        ''', (today_str, user["id"]))
+    transactions_today = cursor.fetchone()[0]
+
     cursor.execute("SELECT COUNT(*) FROM products WHERE stock <= min_stock")
     low_stock = cursor.fetchone()[0]
     
@@ -320,6 +332,7 @@ async def dashboard(request: Request):
             "total_staff": total_staff,
             "my_products": my_products,
             "my_pending": my_pending,
+            "transactions_today": transactions_today,
             "low_stock": low_stock,
             "total_value": total_value,
             "total_products": total_products,
@@ -385,13 +398,13 @@ async def products_page(request: Request):
     min_stock_filter = request.query_params.get('min_stock', '')
     
     if user["role"] == "staff":
-        # Nhân viên chỉ thấy sản phẩm mình thêm
+        # Nhân viên thấy: Sản phẩm đã duyệt (toàn bộ) HOẶC Sản phẩm do mình thêm (kể cả chưa duyệt)
         query = '''
             SELECT p.*, u.full_name as added_by_name, u2.full_name as approved_by_name 
             FROM products p 
             LEFT JOIN users u ON p.added_by = u.id 
             LEFT JOIN users u2 ON p.approved_by = u2.id
-            WHERE p.added_by = ?
+            WHERE p.status = 'approved' OR p.added_by = ?
         '''
         params = [user["id"]]
     else:
@@ -608,7 +621,7 @@ async def product_detail(request: Request, product_id: int):
     if not product:
         conn.close()
         return RedirectResponse("/products", status_code=302)
-    
+        
     # Lấy lịch sử giao dịch
     cursor.execute('''
         SELECT t.*, u.full_name as user_name 
