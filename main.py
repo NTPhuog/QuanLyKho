@@ -27,13 +27,13 @@ def init_db():
     cursor = conn.cursor()
     
     # Xóa bảng cũ nếu tồn tại và tạo mới
-    cursor.execute('DROP TABLE IF EXISTS transactions')
-    cursor.execute('DROP TABLE IF EXISTS products')
-    cursor.execute('DROP TABLE IF EXISTS users')
+    # cursor.execute('DROP TABLE IF EXISTS transactions')
+    # cursor.execute('DROP TABLE IF EXISTS products')
+    # cursor.execute('DROP TABLE IF EXISTS users')
     
     # Users table - ĐẦY ĐỦ CÁC CỘT
     cursor.execute('''
-        CREATE TABLE users (
+        CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
@@ -49,7 +49,7 @@ def init_db():
     
     # Products table - ĐẦY ĐỦ CÁC CỘT
     cursor.execute('''
-        CREATE TABLE products (
+        CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             category TEXT NOT NULL,
@@ -74,7 +74,7 @@ def init_db():
     ''')
     
     cursor.execute('''
-        CREATE TABLE transactions (
+        CREATE TABLE IF NOT EXISTS transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             product_id INTEGER,
             type TEXT NOT NULL,
@@ -609,11 +609,6 @@ async def product_detail(request: Request, product_id: int):
         conn.close()
         return RedirectResponse("/products", status_code=302)
     
-    # Kiểm tra quyền xem: nhân viên chỉ xem được sản phẩm của mình
-    if user["role"] == "staff" and product["added_by"] != user["id"]:
-        conn.close()
-        return RedirectResponse("/products?error=Không có quyền xem sản phẩm này", status_code=302)
-    
     # Lấy lịch sử giao dịch
     cursor.execute('''
         SELECT t.*, u.full_name as user_name 
@@ -741,8 +736,8 @@ async def admin_add_user(
     email: str = Form(...),
     password: str = Form(...),
     full_name: str = Form(...),
-    phone: str = Form(...),
-    address: str = Form(...),
+    phone: Optional[str] = Form(None),
+    address: Optional[str] = Form(None),
     role: str = Form(...)
 ):
     user = get_current_user(request)

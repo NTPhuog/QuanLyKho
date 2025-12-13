@@ -28,36 +28,40 @@
 
 <div class="row">
     <div class="col-md-4">
-        <div class="card">
+        <div class="card shadow-sm border-0 mb-4">
             <div class="card-body text-center">
-                <div class="avatar-lg mb-3">
+                <div class="avatar-lg mb-3 mt-2">
                     {% if user.role == 'admin' %}
-                    <i class="bi bi-shield-check" style="font-size: 5rem; color: #e74c3c;"></i>
+                    <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                        <i class="bi bi-shield-check text-danger" style="font-size: 3rem;"></i>
+                    </div>
                     {% else %}
-                    <i class="bi bi-person-badge" style="font-size: 5rem; color: #4361ee;"></i>
+                    <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                        <i class="bi bi-person text-primary" style="font-size: 3rem;"></i>
+                    </div>
                     {% endif %}
                 </div>
-                <h4>{{ user.full_name }}</h4>
+                <h4 class="fw-bold">{{ user.full_name }}</h4>
                 <p class="text-muted">{{ user.email }}</p>
                 <span class="badge {% if user.role == 'admin' %}bg-danger{% else %}bg-primary{% endif %} fs-6 p-2">
                     <i class="bi bi-{% if user.role == 'admin' %}shield-check{% else %}person{% endif %} me-1"></i>
                     {{ 'Quản trị viên' if user.role == 'admin' else 'Nhân viên' }}
                 </span>
 
-                <div class="mt-4 text-start">
-                    <p><i class="bi bi-telephone me-2"></i> {{ user.phone or 'Chưa cập nhật' }}</p>
-                    <p><i class="bi bi-geo-alt me-2"></i> {{ user.address or 'Chưa cập nhật' }}</p>
+                <div class="mt-4 pt-3 border-top text-start">
+                    <p class="mb-2"><i class="bi bi-telephone me-2 text-muted"></i> {{ user.phone or 'Chưa cập nhật' }}</p>
+                    <p class="mb-2"><i class="bi bi-geo-alt me-2 text-muted"></i> {{ user.address or 'Chưa cập nhật' }}</p>
                     {% if user.created_at %}
-                    <p><i class="bi bi-calendar me-2"></i> Tham gia: {{ user.created_at[:10] }}</p>
+                    <p class="mb-0"><i class="bi bi-calendar me-2 text-muted"></i> Tham gia: {{ user.created_at[:10] }}</p>
                     {% endif %}
                 </div>
             </div>
         </div>
 
         {% if user.role == 'admin' %}
-        <div class="card mt-3 border-danger">
+        <div class="card mt-3 border-danger shadow-sm">
             <div class="card-body">
-                <h5><i class="bi bi-shield-lock text-danger me-2"></i> Quyền hạn Admin</h5>
+                <h5 class="card-title text-danger mb-3"><i class="bi bi-shield-lock me-2"></i> Quyền hạn Admin</h5>
                 <ul class="list-unstyled small">
                     <li><i class="bi bi-check-circle text-success me-1"></i> Duyệt sản phẩm nhân viên</li>
                     <li><i class="bi bi-check-circle text-success me-1"></i> Quản lý người dùng hệ thống</li>
@@ -70,7 +74,7 @@
     </div>
 
     <div class="col-md-8">
-        <div class="card">
+        <div class="card shadow-sm border-0">
             <div
                 class="card-header {% if user.role == 'admin' %}bg-danger text-white{% else %}bg-primary text-white{% endif %}">
                 <h5 class="mb-0"><i class="bi bi-gear me-2"></i> Cập nhật thông tin</h5>
@@ -134,7 +138,7 @@
         <!-- Thống kê cho admin -->
         <div class="row mt-4">
             <div class="col-md-3">
-                <div class="stat-card">
+                <div class="card shadow-sm border-0 h-100 p-3 text-center">
                     <div class="card-icon bg-primary">
                         <i class="bi bi-people"></i>
                     </div>
@@ -143,7 +147,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="stat-card">
+                <div class="card shadow-sm border-0 h-100 p-3 text-center">
                     <div class="card-icon bg-success">
                         <i class="bi bi-shield-check"></i>
                     </div>
@@ -152,7 +156,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="stat-card">
+                <div class="card shadow-sm border-0 h-100 p-3 text-center">
                     <div class="card-icon bg-info">
                         <i class="bi bi-person"></i>
                     </div>
@@ -161,7 +165,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="stat-card">
+                <div class="card shadow-sm border-0 h-100 p-3 text-center">
                     <div class="card-icon bg-warning">
                         <i class="bi bi-clock-history"></i>
                     </div>

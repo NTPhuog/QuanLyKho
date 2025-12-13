@@ -9,11 +9,9 @@
 </div>
 
 <!-- Add User Form -->
-<div class="card mb-4">
-    <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="bi bi-person-plus me-2"></i> Thêm người dùng mới</h5>
-    </div>
+<div class="card mb-4 shadow-sm border-0">
     <div class="card-body">
+        <h5 class="card-title mb-4 text-primary"><i class="bi bi-person-plus me-2"></i> Thêm người dùng mới</h5>
         <form method="post" action="/admin/users/add" class="row g-3">
             <div class="col-md-3">
                 <input type="text" class="form-control" name="full_name" placeholder="Họ và tên" required>
@@ -41,12 +39,12 @@
 </div>
 
 <!-- Users Table -->
-<div class="table-container">
+<div class="card shadow-sm border-0"><div class="card-body">
     <div class="table-header">
         <h5><i class="bi bi-list-check me-2"></i> Danh sách người dùng</h5>
     </div>
 
-    <div class="table-responsive">
+    <div class="table-responsive mt-3">
         <table class="table table-hover">
             <thead>
                 <tr>
@@ -91,5 +89,5 @@
             </tbody>
         </table>
     </div>
-</div>
+</div></div>
 {% endblock %}
