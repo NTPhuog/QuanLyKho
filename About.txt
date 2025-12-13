@@ -1,1 +1,3 @@
-we 
+git add .
+git commit -m "Cap nhat code moi nhat"
+git push
