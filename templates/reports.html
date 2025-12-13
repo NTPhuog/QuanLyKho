@@ -12,7 +12,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <div class="btn-group w-100" role="group">
-            cd C:\Users\Lenovo\Downloads\dc <a href="/reports?type=daily"
+            <a href="/reports?type=daily"
                 class="btn {% if report_type == 'daily' %}btn-primary{% else %}btn-outline-primary{% endif %}">
                 <i class="bi bi-calendar-day me-1"></i> Hằng ngày
             </a>
@@ -93,12 +93,13 @@
                     <td>{{ row['total_stock'] }}</td>
                     <td>{{ "{:,.0f}".format(row['total_value'] or 0) }} đ</td>
                     <td>
+                        {% set total = report_data|sum(attribute='product_count') or 1 %}
                         <div class="progress">
                             <div class="progress-bar bg-primary"
-                                style="width: {{ (row['product_count'] / report_data|length * 100)|int }}%">
+                                style="width: {{ (row['product_count'] / total * 100)|int }}%">
                             </div>
                         </div>
-                        <small>{{ (row['product_count'] / report_data|length * 100)|int }}%</small>
+                        <small>{{ (row['product_count'] / total * 100)|int }}%</small>
                     </td>
 
                     {% else %}
