@@ -731,7 +731,7 @@ async def admin_approve_products(request: Request):
     
     conn.close()
     
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         "admin_approve.html",
         {
             "request": request,
@@ -740,6 +740,9 @@ async def admin_approve_products(request: Request):
             "pending_products": pending_products
         }
     )
+    # Thêm header để ngăn trình duyệt lưu cache trang duyệt sản phẩm
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 @app.post("/admin/products/{product_id}/approve")
 async def approve_product(request: Request, product_id: int):
@@ -758,8 +761,10 @@ async def approve_product(request: Request, product_id: int):
     
     conn.commit()
     conn.close()
+    print(f"✅ Đã duyệt sản phẩm {product_id}")
     
-    return RedirectResponse("/admin/approve-products", status_code=302)
+    # Sử dụng 303 See Other để trình duyệt hiểu rõ cần tải lại trang mới bằng GET
+    return RedirectResponse("/admin/approve-products", status_code=303)
 
 @app.post("/admin/products/{product_id}/reject")
 async def reject_product(request: Request, product_id: int):
@@ -778,8 +783,9 @@ async def reject_product(request: Request, product_id: int):
     
     conn.commit()
     conn.close()
+    print(f"❌ Đã từ chối sản phẩm {product_id}")
     
-    return RedirectResponse("/admin/approve-products", status_code=302)
+    return RedirectResponse("/admin/approve-products", status_code=303)
 
 # ===== ADMIN: QUẢN LÝ NGƯỜI DÙNG =====
 @app.get("/admin/users", response_class=HTMLResponse)
