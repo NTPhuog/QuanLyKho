@@ -316,12 +316,7 @@
                 <a href="/profile" class="{% if request.url.path == '/profile' %}active{% endif %}">
                     <i class="bi bi-person"></i> Thông tin cá nhân
                 </a>
-            </li>
-            <li class="mt-4">
-                <a href="/logout" class="text-danger">
-                    <i class="bi bi-box-arrow-right"></i> Đăng xuất
-                </a>
-            </li>
+            </li> 
         </ul>
     </div>
 
@@ -374,15 +369,15 @@
                                 </a>
                             </li>
                             {% endif %}
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-in-down me-2"></i> Đơn hàng
-                                    mới</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-exclamation-triangle me-2"></i> Sản
+                            <li><a class="dropdown-item" href="/products"><i class="bi bi-exclamation-triangle me-2"></i> Sản
                                     phẩm sắp hết</a></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
                             <li><a class="dropdown-item" href="/profile"><i class="bi bi-gear me-2"></i> Cài đặt</a>
                             </li>
+                            <li><a class="dropdown-item" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>
+                                    Đăng xuất</a></li>
                         </ul>
                     </div>
                 </div>

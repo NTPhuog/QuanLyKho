@@ -77,6 +77,13 @@
                     <td>{{ u.created_at[:10] }}</td>
                     <td>
                         {% if u.id != user.id %}
+                        <a href="/admin/users/{{ u.id }}/toggle-status" class="btn btn-sm {% if u.status == 'active' %}btn-outline-warning{% else %}btn-outline-success{% endif %} me-1" title="Khóa/Mở khóa">
+                            {% if u.status == 'active' %}
+                            <i class="bi bi-lock"></i>
+                            {% else %}
+                            <i class="bi bi-unlock"></i>
+                            {% endif %}
+                        </a>
                         <a href="/admin/users/{{ u.id }}/delete" class="btn btn-sm btn-outline-danger btn-delete">
                             <i class="bi bi-trash"></i> Xóa
                         </a>

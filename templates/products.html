@@ -10,9 +10,14 @@
             </h2>
             <p class="text-muted mb-0">Quản lý danh sách sản phẩm trong kho hàng</p>
         </div>
-        <button class="btn btn-primary btn-lg shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addProductModal">
-            <i class="bi bi-plus-circle me-2"></i> Thêm sản phẩm
-        </button>
+        <div class="d-flex gap-2">
+            <a href="/logout" class="btn btn-outline-danger btn-lg shadow-sm rounded-pill px-4">
+                <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất
+            </a>
+            <button class="btn btn-primary btn-lg shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                <i class="bi bi-plus-circle me-2"></i> Thêm sản phẩm
+            </button>
+        </div>
     </div>
 
     <!-- Filters Card -->
@@ -224,8 +229,8 @@
                                     </div>
                                     <div class="modal-body">
                                         <div class="text-center mb-4">
-                                            {% if product.get('image') %}
-                                            <img src="/static/uploads/{{ product['image'] }}" class="rounded-3 mb-3 shadow-sm" style="width: 120px; height: 120px; object-fit: cover;" alt="{{ product['name'] }}">
+                                            {% if product['image_url'] %}
+                                            <img src="{{ product['image_url'] }}" class="rounded-3 mb-3 shadow-sm" style="width: 120px; height: 120px; object-fit: cover;" alt="{{ product['name'] }}">
                                             {% else %}
                                             <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
                                                 <i class="bi bi-box-seam text-primary fs-2"></i>
@@ -263,7 +268,65 @@
                                     </div>
                                     <div class="modal-footer border-0">
                                         <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Đóng</button>
+                                        <button class="btn btn-warning rounded-pill" data-bs-target="#editProductModal{{ product['id'] }}" data-bs-toggle="modal">Sửa thông tin</button>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit Product Modal -->
+                        <div class="modal fade" id="editProductModal{{ product['id'] }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                <div class="modal-content rounded-4 shadow">
+                                    <div class="modal-header border-0">
+                                        <h5 class="modal-title fw-bold">Sửa thông tin sản phẩm</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="post" action="/products/{{ product['id'] }}/edit">
+                                        <div class="modal-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-medium">Tên sản phẩm</label>
+                                                    <input type="text" class="form-control rounded-pill" name="name" value="{{ product['name'] }}" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-medium">Danh mục</label>
+                                                    <select class="form-select rounded-pill" name="category" required>
+                                                        <option value="{{ product['category'] }}" selected>{{ product['category'] }}</option>
+                                                        {% for cat in categories %}
+                                                            {% if cat['category'] != product['category'] %}
+                                                            <option value="{{ cat['category'] }}">{{ cat['category'] }}</option>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-medium">Giá (VNĐ)</label>
+                                                    <input type="number" class="form-control rounded-pill" name="price" value="{{ product['price'] or '' }}" step="1000">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-medium">Vị trí</label>
+                                                    <input type="text" class="form-control rounded-pill" name="location" value="{{ product['location'] or '' }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-medium">Nhà cung cấp</label>
+                                                    <input type="text" class="form-control rounded-pill" name="supplier" value="{{ product['supplier'] or '' }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-medium">URL Hình ảnh</label>
+                                                    <input type="text" class="form-control rounded-pill" name="image_url" value="{{ product['image_url'] or '' }}">
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-medium">Mô tả</label>
+                                                    <textarea class="form-control rounded-3" name="description" rows="3">{{ product['description'] or '' }}</textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0">
+                                            <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Hủy</button>
+                                            <button type="submit" class="btn btn-warning rounded-pill px-4">Lưu thay đổi</button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -332,6 +395,10 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-medium">Nhà cung cấp</label>
                                 <input type="text" class="form-control rounded-pill" name="supplier">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">URL Hình ảnh</label>
+                                <input type="text" class="form-control rounded-pill" name="image_url" placeholder="/static/img/products/...">
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-medium">Mô tả sản phẩm</label>

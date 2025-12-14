@@ -473,7 +473,8 @@ async def add_product(
     manufacturer: str = Form(None),
     distributor: str = Form(None),
     location: str = Form(None),
-    description: str = Form(None)
+    description: str = Form(None),
+    image_url: str = Form(None)
 ):
     user = get_current_user(request)
     if not user:
@@ -486,10 +487,10 @@ async def add_product(
         cursor.execute('''
             INSERT INTO products 
             (name, category, sku, stock, min_stock, price, supplier, supplier_country, 
-             manufacturer, distributor, location, description, added_by, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+             manufacturer, distributor, location, description, image_url, added_by, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
         ''', (name, category, sku, stock, min_stock, price, supplier, supplier_country, 
-              manufacturer, distributor, location, description, user["id"]))
+              manufacturer, distributor, location, description, image_url, user["id"]))
         
         product_id = cursor.lastrowid
         cursor.execute('''
@@ -565,6 +566,48 @@ async def update_product(
         INSERT INTO transactions (product_id, type, quantity, user_id, notes)
         VALUES (?, ?, ?, ?, ?)
     ''', (product_id, type, stock_change, user["id"], notes))
+    
+    conn.commit()
+    conn.close()
+    
+    return RedirectResponse("/products", status_code=302)
+
+@app.post("/products/{product_id}/edit")
+async def edit_product_info(
+    request: Request,
+    product_id: int,
+    name: str = Form(...),
+    category: str = Form(...),
+    price: float = Form(None),
+    image_url: str = Form(None),
+    description: str = Form(None),
+    supplier: str = Form(None),
+    location: str = Form(None)
+):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT added_by, status FROM products WHERE id = ?", (product_id,))
+    product = cursor.fetchone()
+    
+    if not product:
+        conn.close()
+        return RedirectResponse("/products", status_code=302)
+    
+    # Kiểm tra quyền: Admin hoặc người tạo ra sản phẩm mới được sửa
+    if user["role"] != "admin" and product[0] != user["id"]:
+        conn.close()
+        return RedirectResponse("/products?error=Không có quyền sửa sản phẩm này", status_code=302)
+
+    cursor.execute('''
+        UPDATE products 
+        SET name = ?, category = ?, price = ?, image_url = ?, description = ?, supplier = ?, location = ?, last_updated = CURRENT_TIMESTAMP
+        WHERE id = ?
+    ''', (name, category, price, image_url, description, supplier, location, product_id))
     
     conn.commit()
     conn.close()
