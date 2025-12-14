@@ -23,6 +23,7 @@ except OSError:
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+templates.env.globals["is_vercel"] = os.environ.get("VERCEL")
 
 # ===== DATABASE CONFIG =====
 # Trên Vercel, chúng ta không thể ghi vào thư mục gốc, phải dùng thư mục tạm

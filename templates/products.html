@@ -2,6 +2,12 @@
 
 {% block content %}
 <div class="container-fluid py-4">
+    {% if is_vercel %}
+    <div class="alert alert-warning shadow-sm rounded-3 mb-4 border-warning">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Lưu ý quan trọng:</strong> Bạn đang chạy trên Vercel. Dữ liệu sẽ bị <strong>RESET (mất)</strong> về mặc định mỗi khi server khởi động lại. Đây là cơ chế của Vercel với SQLite. Để lưu vĩnh viễn, hãy cân nhắc chuyển sang <strong>PythonAnywhere</strong>.
+    </div>
+    {% endif %}
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
