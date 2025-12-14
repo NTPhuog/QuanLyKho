@@ -7,6 +7,7 @@ import hashlib
 from datetime import datetime
 from typing import Optional
 import os
+import tempfile
 
 app = FastAPI(
     title="Hệ thống quản lý kho thông minh",
@@ -15,15 +16,29 @@ app = FastAPI(
 )
 
 # ===== CONFIGURATION =====
-os.makedirs('static', exist_ok=True)
+try:
+    os.makedirs('static', exist_ok=True)
+except OSError:
+    pass # Bỏ qua lỗi nếu chạy trên môi trường read-only (Vercel)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+# ===== DATABASE CONFIG =====
+# Trên Vercel, chúng ta không thể ghi vào thư mục gốc, phải dùng thư mục tạm
+try:
+    os.makedirs('data', exist_ok=True)
+    DB_PATH = 'data/database.db'
+except OSError:
+    # Fallback cho Vercel: Sử dụng thư mục tạm thời
+    DB_PATH = os.path.join(tempfile.gettempdir(), 'database.db')
+    print(f"⚠️ Đang chạy trên môi trường Read-Only. Database lưu tại: {DB_PATH}")
+
 # ===== DATABASE SETUP =====
 def init_db():
-    os.makedirs('data', exist_ok=True)
+    # Không cần os.makedirs('data') ở đây nữa vì đã xử lý ở trên
     
-    conn = sqlite3.connect('data/database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     # Xóa bảng cũ nếu tồn tại và tạo mới
@@ -98,7 +113,7 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 def verify_user(email: str, password: str):
-    conn = sqlite3.connect('data/database.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     hashed_pw = hash_password(password)
     
@@ -125,7 +140,7 @@ def verify_user(email: str, password: str):
     return None
 
 def get_db_connection():
-    conn = sqlite3.connect('data/database.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
