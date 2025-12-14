@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Optional
 import os
 import tempfile
+from a2wsgi import ASGIMiddleware
 
 app = FastAPI(
     title="Hệ thống quản lý kho thông minh",
@@ -16,13 +17,16 @@ app = FastAPI(
 )
 
 # ===== CONFIGURATION =====
+# Lấy đường dẫn tuyệt đối của thư mục hiện tại để tránh lỗi path trên hosting
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 try:
-    os.makedirs('static', exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 except OSError:
     pass # Bỏ qua lỗi nếu chạy trên môi trường read-only (Vercel)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 templates.env.globals["is_vercel"] = os.environ.get("VERCEL")
 
 # ===== DATABASE CONFIG =====
@@ -32,8 +36,8 @@ if os.environ.get("VERCEL"):
     DB_PATH = os.path.join(tempfile.gettempdir(), 'database.db')
 else:
     try:
-        os.makedirs('data', exist_ok=True)
-        DB_PATH = 'data/database.db'
+        os.makedirs(os.path.join(BASE_DIR, 'data'), exist_ok=True)
+        DB_PATH = os.path.join(BASE_DIR, 'data', 'database.db')
     except OSError:
         DB_PATH = os.path.join(tempfile.gettempdir(), 'database.db')
 
@@ -1118,6 +1122,10 @@ async def logout():
     response = RedirectResponse("/login", status_code=302)
     response.delete_cookie("user_id")
     return response
+
+# ===== WSGI ADAPTER FOR PYTHONANYWHERE =====
+# PythonAnywhere sử dụng WSGI, cần chuyển đổi từ ASGI (FastAPI) sang WSGI
+application = ASGIMiddleware(app)
 
 if __name__ == "__main__":
     import uvicorn
