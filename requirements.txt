@@ -2,5 +2,4 @@ fastapi
 uvicorn
 jinja2
 python-multipart
-aiofiles
-a2wsgi
+psycopg2-binary

@@ -611,7 +611,7 @@ async def update_product(
     product_id: int,
     stock_change: int = Form(...),
     type: str = Form(...),
-    notes: str = Form(...)
+    notes: Optional[str] = Form(None)
 ):
     user = get_current_user(request)
     if not user:
