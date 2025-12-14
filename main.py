@@ -159,7 +159,7 @@ def create_initial_data():
             hash_password("admin123"),
             "Nguyễn Văn Admin",
             "admin",
-            "/static/img/avatars/admin.png",
+            "/static/image/phuong.jpg",
             "0912345678",
             "Hà Nội, Việt Nam"
         ))
@@ -177,6 +177,9 @@ def create_initial_data():
             "TP.HCM, Việt Nam"
         ))
         print("✅ Đã tạo tài khoản mẫu")
+    else:
+        # Cập nhật avatar admin nếu tài khoản đã tồn tại
+        cursor.execute("UPDATE users SET avatar = ? WHERE email = ?", ("/static/image/phuong.jpg", "admin@warehouse.com"))
     
     cursor.execute("SELECT COUNT(*) FROM products")
     if cursor.fetchone()[0] == 0:

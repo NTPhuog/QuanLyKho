@@ -224,9 +224,13 @@
                                     </div>
                                     <div class="modal-body">
                                         <div class="text-center mb-4">
+                                            {% if product.get('image') %}
+                                            <img src="/static/uploads/{{ product['image'] }}" class="rounded-3 mb-3 shadow-sm" style="width: 120px; height: 120px; object-fit: cover;" alt="{{ product['name'] }}">
+                                            {% else %}
                                             <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
                                                 <i class="bi bi-box-seam text-primary fs-2"></i>
                                             </div>
+                                            {% endif %}
                                             <h4 class="fw-bold mb-1">{{ product['name'] }}</h4>
                                             <span class="badge bg-primary-subtle text-primary rounded-pill">{{ product['category'] }}</span>
                                         </div>
