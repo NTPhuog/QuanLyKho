@@ -26,13 +26,15 @@ templates = Jinja2Templates(directory="templates")
 
 # ===== DATABASE CONFIG =====
 # Trên Vercel, chúng ta không thể ghi vào thư mục gốc, phải dùng thư mục tạm
-try:
-    os.makedirs('data', exist_ok=True)
-    DB_PATH = 'data/database.db'
-except OSError:
-    # Fallback cho Vercel: Sử dụng thư mục tạm thời
+if os.environ.get("VERCEL"):
+    # Nếu đang chạy trên Vercel, luôn dùng thư mục tạm
     DB_PATH = os.path.join(tempfile.gettempdir(), 'database.db')
-    print(f"⚠️ Đang chạy trên môi trường Read-Only. Database lưu tại: {DB_PATH}")
+else:
+    try:
+        os.makedirs('data', exist_ok=True)
+        DB_PATH = 'data/database.db'
+    except OSError:
+        DB_PATH = os.path.join(tempfile.gettempdir(), 'database.db')
 
 # ===== DATABASE SETUP =====
 def init_db():
