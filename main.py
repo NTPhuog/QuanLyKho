@@ -488,7 +488,7 @@ async def products_page(request: Request):
             FROM products p 
             LEFT JOIN users u ON p.added_by = u.id 
             LEFT JOIN users u2 ON p.approved_by = u2.id
-            WHERE p.status = 'approved' OR p.added_by = ?
+            WHERE (p.status = 'approved' OR p.added_by = ?)
         '''
         params = [user["id"]]
     else:
@@ -1120,6 +1120,21 @@ async def reports_page(request: Request):
     
     report_data = [dict(row) for row in cursor.fetchall()]
     
+    # Tính tỷ lệ tăng trưởng (cho báo cáo ngày: so sánh nửa đầu vs nửa sau kỳ báo cáo)
+    growth_rate = 0
+    if report_type == 'daily' and len(report_data) > 1:
+        mid = len(report_data) // 2
+        recent = report_data[:mid]
+        older = report_data[mid:]
+        
+        recent_sum = sum(item['transactions'] for item in recent)
+        older_sum = sum(item['transactions'] for item in older)
+        
+        if older_sum > 0:
+            growth_rate = ((recent_sum - older_sum) / older_sum) * 100
+        elif recent_sum > 0:
+            growth_rate = 100.0
+    
     conn.close()
     
     return templates.TemplateResponse(
@@ -1130,6 +1145,7 @@ async def reports_page(request: Request):
             "user": user,
             "report_type": report_type,
             "report_data": report_data,
+            "growth_rate": growth_rate,
             "now": datetime.now
         }
     )
