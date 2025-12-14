@@ -9,6 +9,12 @@ from typing import Optional
 import os
 import tempfile
 
+try:
+    import psycopg2
+    from psycopg2.extras import DictCursor
+except ImportError:
+    psycopg2 = None
+
 app = FastAPI(
     title="Hệ thống quản lý kho thông minh",
     description="Hệ thống quản lý kho hàng với đầy đủ tính năng",
@@ -25,22 +31,84 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # ===== DATABASE CONFIG =====
-# Trên Vercel, chúng ta không thể ghi vào thư mục gốc, phải dùng thư mục tạm
-if os.environ.get("VERCEL"):
-    # Nếu đang chạy trên Vercel, luôn dùng thư mục tạm
-    DB_PATH = os.path.join(tempfile.gettempdir(), 'database.db')
+DATABASE_URL = os.environ.get("DATABASE_URL")
+IS_POSTGRES = False
+
+if DATABASE_URL and psycopg2:
+    IS_POSTGRES = True
+    print("✅ Đang sử dụng PostgreSQL")
 else:
-    try:
-        os.makedirs('data', exist_ok=True)
-        DB_PATH = 'data/database.db'
-    except OSError:
+    # Trên Vercel, chúng ta không thể ghi vào thư mục gốc, phải dùng thư mục tạm
+    if os.environ.get("VERCEL"):
+        # Nếu đang chạy trên Vercel, luôn dùng thư mục tạm
         DB_PATH = os.path.join(tempfile.gettempdir(), 'database.db')
+    else:
+        try:
+            os.makedirs('data', exist_ok=True)
+            DB_PATH = 'data/database.db'
+        except OSError:
+            DB_PATH = os.path.join(tempfile.gettempdir(), 'database.db')
+
+# ===== DB WRAPPER (Để tương thích giữa SQLite và Postgres) =====
+class DBCursorWrapper:
+    def __init__(self, cursor, is_postgres):
+        self.cursor = cursor
+        self.is_postgres = is_postgres
+        self.lastrowid = None
+
+    def execute(self, sql, params=()):
+        if self.is_postgres:
+            # Thay thế placeholder ? của SQLite thành %s của Postgres
+            sql = sql.replace('?', '%s')
+            # Thay thế cú pháp AUTOINCREMENT
+            sql = sql.replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY')
+            self.cursor.execute(sql, params)
+        else:
+            self.cursor.execute(sql, params)
+            self.lastrowid = self.cursor.lastrowid
+    
+    def fetchone(self):
+        return self.cursor.fetchone()
+        
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+    def __getattr__(self, name):
+        return getattr(self.cursor, name)
+
+class DBConnectionWrapper:
+    def __init__(self, conn, is_postgres):
+        self.conn = conn
+        self.is_postgres = is_postgres
+
+    def cursor(self):
+        return DBCursorWrapper(self.conn.cursor(), self.is_postgres)
+
+    def commit(self):
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
+def get_db_connection():
+    if IS_POSTGRES:
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
+        return DBConnectionWrapper(conn, True)
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return DBConnectionWrapper(conn, False)
 
 # ===== DATABASE SETUP =====
 def init_db():
     # Không cần os.makedirs('data') ở đây nữa vì đã xử lý ở trên
     
-    conn = sqlite3.connect(DB_PATH)
+    try:
+        conn = get_db_connection()
+    except Exception as e:
+        print(f"❌ Lỗi kết nối database: {e}")
+        return
+
     cursor = conn.cursor()
     
     # Xóa bảng cũ nếu tồn tại và tạo mới
@@ -115,7 +183,7 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 def verify_user(email: str, password: str):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     hashed_pw = hash_password(password)
     
@@ -140,11 +208,6 @@ def verify_user(email: str, password: str):
             "status": user[7]
         }
     return None
-
-def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 def get_current_user(request: Request):
     user_id = request.cookies.get("user_id")
@@ -501,21 +564,36 @@ async def add_product(
     cursor = conn.cursor()
     
     try:
-        cursor.execute('''
-            INSERT INTO products 
-            (name, category, sku, stock, min_stock, price, supplier, supplier_country, 
-             manufacturer, distributor, location, description, image_url, added_by, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
-        ''', (name, category, sku, stock, min_stock, price, supplier, supplier_country, 
-              manufacturer, distributor, location, description, image_url, user["id"]))
-        
-        product_id = cursor.lastrowid
+        if IS_POSTGRES:
+            # Postgres cần RETURNING id để lấy ID vừa tạo
+            cursor.execute('''
+                INSERT INTO products 
+                (name, category, sku, stock, min_stock, price, supplier, supplier_country, 
+                 manufacturer, distributor, location, description, image_url, added_by, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+                RETURNING id
+            ''', (name, category, sku, stock, min_stock, price, supplier, supplier_country, 
+                  manufacturer, distributor, location, description, image_url, user["id"]))
+            product_id = cursor.fetchone()[0]
+        else:
+            cursor.execute('''
+                INSERT INTO products 
+                (name, category, sku, stock, min_stock, price, supplier, supplier_country, 
+                 manufacturer, distributor, location, description, image_url, added_by, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+            ''', (name, category, sku, stock, min_stock, price, supplier, supplier_country, 
+                  manufacturer, distributor, location, description, image_url, user["id"]))
+            product_id = cursor.lastrowid
+            
         cursor.execute('''
             INSERT INTO transactions (product_id, type, quantity, user_id, notes)
             VALUES (?, 'in', ?, ?, ?)
         ''', (product_id, stock, user["id"], f"Thêm sản phẩm mới: {name}"))
         
         conn.commit()
+    except Exception as e:
+        print(f"Error adding product: {e}")
+        return JSONResponse(status_code=400, content={"error": str(e)})
     except sqlite3.IntegrityError:
         return JSONResponse(
             status_code=400,
