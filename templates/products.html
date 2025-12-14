@@ -215,7 +215,54 @@
                         </div>
 
                         <!-- View Product Modal (giữ nguyên phần lớn, chỉ thêm rounded-pill cho badge) -->
-                        <!-- ... (giữ nội dung modal chi tiết như cũ, chỉ thay badge thành rounded-pill nếu muốn) ... -->
+                        <div class="modal fade" id="viewProductModal{{ product['id'] }}" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content rounded-4 shadow">
+                                    <div class="modal-header border-0">
+                                        <h5 class="modal-title fw-bold">Chi tiết sản phẩm</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="text-center mb-4">
+                                            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                                                <i class="bi bi-box-seam text-primary fs-2"></i>
+                                            </div>
+                                            <h4 class="fw-bold mb-1">{{ product['name'] }}</h4>
+                                            <span class="badge bg-primary-subtle text-primary rounded-pill">{{ product['category'] }}</span>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-6">
+                                                <label class="small text-muted fw-bold">SKU</label>
+                                                <div class="fw-medium">{{ product['sku'] }}</div>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="small text-muted fw-bold">Giá bán</label>
+                                                <div class="fw-medium text-primary">{{ "{:,.0f}".format(product['price'] or 0) }} VNĐ</div>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="small text-muted fw-bold">Tồn kho</label>
+                                                <div class="fw-medium">{{ product['stock'] }} <span class="text-muted small">/ {{ product['min_stock'] }} (Min)</span></div>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="small text-muted fw-bold">Vị trí</label>
+                                                <div class="fw-medium">{{ product['location'] or '-' }}</div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="small text-muted fw-bold">Nhà cung cấp</label>
+                                                <div class="fw-medium">{{ product['supplier'] or '-' }}</div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="small text-muted fw-bold">Mô tả</label>
+                                                <p class="small text-muted bg-light p-3 rounded-3 mb-0">{{ product['description'] or 'Chưa có mô tả' }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-0">
+                                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Đóng</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         {% endfor %}
                     </tbody>
