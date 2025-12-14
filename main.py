@@ -8,7 +8,6 @@ from datetime import datetime
 from typing import Optional
 import os
 import tempfile
-from a2wsgi import ASGIMiddleware
 
 app = FastAPI(
     title="Hệ thống quản lý kho thông minh",
@@ -17,17 +16,13 @@ app = FastAPI(
 )
 
 # ===== CONFIGURATION =====
-# Lấy đường dẫn tuyệt đối của thư mục hiện tại để tránh lỗi path trên hosting
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 try:
-    os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
+    os.makedirs('static', exist_ok=True)
 except OSError:
     pass # Bỏ qua lỗi nếu chạy trên môi trường read-only (Vercel)
 
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
-templates.env.globals["is_vercel"] = os.environ.get("VERCEL")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 # ===== DATABASE CONFIG =====
 # Trên Vercel, chúng ta không thể ghi vào thư mục gốc, phải dùng thư mục tạm
@@ -36,8 +31,8 @@ if os.environ.get("VERCEL"):
     DB_PATH = os.path.join(tempfile.gettempdir(), 'database.db')
 else:
     try:
-        os.makedirs(os.path.join(BASE_DIR, 'data'), exist_ok=True)
-        DB_PATH = os.path.join(BASE_DIR, 'data', 'database.db')
+        os.makedirs('data', exist_ok=True)
+        DB_PATH = 'data/database.db'
     except OSError:
         DB_PATH = os.path.join(tempfile.gettempdir(), 'database.db')
 
@@ -736,7 +731,7 @@ async def admin_approve_products(request: Request):
     
     conn.close()
     
-    response = templates.TemplateResponse(
+    return templates.TemplateResponse(
         "admin_approve.html",
         {
             "request": request,
@@ -745,9 +740,6 @@ async def admin_approve_products(request: Request):
             "pending_products": pending_products
         }
     )
-    # Thêm header để ngăn trình duyệt lưu cache trang duyệt sản phẩm
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    return response
 
 @app.post("/admin/products/{product_id}/approve")
 async def approve_product(request: Request, product_id: int):
@@ -766,10 +758,8 @@ async def approve_product(request: Request, product_id: int):
     
     conn.commit()
     conn.close()
-    print(f"✅ Đã duyệt sản phẩm {product_id}")
     
-    # Sử dụng 303 See Other để trình duyệt hiểu rõ cần tải lại trang mới bằng GET
-    return RedirectResponse("/admin/approve-products", status_code=303)
+    return RedirectResponse("/admin/approve-products", status_code=302)
 
 @app.post("/admin/products/{product_id}/reject")
 async def reject_product(request: Request, product_id: int):
@@ -788,9 +778,8 @@ async def reject_product(request: Request, product_id: int):
     
     conn.commit()
     conn.close()
-    print(f"❌ Đã từ chối sản phẩm {product_id}")
     
-    return RedirectResponse("/admin/approve-products", status_code=303)
+    return RedirectResponse("/admin/approve-products", status_code=302)
 
 # ===== ADMIN: QUẢN LÝ NGƯỜI DÙNG =====
 @app.get("/admin/users", response_class=HTMLResponse)
@@ -1122,10 +1111,6 @@ async def logout():
     response = RedirectResponse("/login", status_code=302)
     response.delete_cookie("user_id")
     return response
-
-# ===== WSGI ADAPTER FOR PYTHONANYWHERE =====
-# PythonAnywhere sử dụng WSGI, cần chuyển đổi từ ASGI (FastAPI) sang WSGI
-application = ASGIMiddleware(app)
 
 if __name__ == "__main__":
     import uvicorn
