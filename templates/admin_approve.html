@@ -36,28 +36,31 @@
                 <tr>
                     <td>{{ loop.index }}</td>
                     <td>
-                        <strong>{{ product['name'] }}</strong><br>
-                        <small class="text-muted">SKU: {{ product['sku'] }}</small><br>
-                        <span class="badge bg-info">{{ product['category'] }}</span>
+                        <strong>{{ product.name }}</strong><br>
+                        <small class="text-muted">SKU: {{ product.sku }}</small><br>
+                        <span class="badge bg-info">{{ product.category }}</span>
                     </td>
                     <td>
-                        <strong>Nhà cung cấp:</strong> {{ product['supplier'] or '-' }}
+                        <strong>Nhà cung cấp:</strong> {{ product.supplier }}<br>
+                        <strong>Quốc gia:</strong> {{ product.supplier_country }}<br>
+                        <strong>Nhà SX:</strong> {{ product.manufacturer }}<br>
+                        <strong>Phân phối:</strong> {{ product.distributor }}
                     </td>
-                    <td>{{ product['added_by_name'] }}</td>
+                    <td>{{ product.added_by_name }}</td>
                     <td>
-                        <strong>Số lượng:</strong> {{ product['stock'] }}<br>
-                        <strong>Giá:</strong> {{ "{:,.0f}".format(product['price'] or 0) }} đ<br>
-                        <strong>Vị trí:</strong> {{ product['location'] or '-' }}<br>
-                        <small>{{ (product['description'] or '')[:50] }}...</small>
+                        <strong>Số lượng:</strong> {{ product.stock }}<br>
+                        <strong>Giá:</strong> {{ "{:,.0f}".format(product.price) }} đ<br>
+                        <strong>Vị trí:</strong> {{ product.location }}<br>
+                        <small>{{ product.description[:50] }}...</small>
                     </td>
                     <td>
                         <div class="btn-group">
-                            <form method="post" action="/admin/products/{{ product['id'] }}/approve" class="d-inline">
+                            <form method="post" action="/admin/products/{{ product.id }}/approve" class="d-inline">
                                 <button type="submit" class="btn btn-sm btn-success">
                                     <i class="bi bi-check"></i> Duyệt
                                 </button>
                             </form>
-                            <form method="post" action="/admin/products/{{ product['id'] }}/reject" class="d-inline ms-1">
+                            <form method="post" action="/admin/products/{{ product.id }}/reject" class="d-inline ms-1">
                                 <button type="submit" class="btn btn-sm btn-danger">
                                     <i class="bi bi-x"></i> Từ chối
                                 </button>
