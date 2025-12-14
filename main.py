@@ -172,7 +172,7 @@ def create_initial_data():
             hash_password("staff123"),
             "Trần Văn Nhân viên",
             "staff",
-            "/static/img/avatars/staff.png",
+            "/static/image/Thanh.png",
             "0987654321",
             "TP.HCM, Việt Nam"
         ))
@@ -804,6 +804,31 @@ async def admin_toggle_user_status(request: Request, user_id: int):
     conn.close()
     
     return RedirectResponse("/admin/users", status_code=302)
+
+@app.get("/admin/users/{user_id}/delete")
+async def admin_delete_user(request: Request, user_id: int):
+    user = get_current_user(request)
+    if not user or user["role"] != "admin":
+        return RedirectResponse("/login", status_code=302)
+    
+    # Không cho xóa chính mình
+    if str(user["id"]) == str(user_id):
+        return RedirectResponse("/admin/users?error=Không thể xóa tài khoản của chính mình", status_code=302)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Cập nhật các bản ghi liên quan thành NULL trước khi xóa user để tránh lỗi và giữ lịch sử
+    cursor.execute("UPDATE products SET added_by = NULL WHERE added_by = ?", (user_id,))
+    cursor.execute("UPDATE products SET approved_by = NULL WHERE approved_by = ?", (user_id,))
+    cursor.execute("UPDATE transactions SET user_id = NULL WHERE user_id = ?", (user_id,))
+    
+    cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    
+    conn.commit()
+    conn.close()
+    
+    return RedirectResponse("/admin/users?success=Đã xóa tài khoản thành công", status_code=302)
 
 # ===== THÔNG TIN CÁ NHÂN =====
 @app.get("/profile", response_class=HTMLResponse)
