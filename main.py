@@ -237,11 +237,11 @@ def create_initial_data():
         ''', (
             "admin@warehouse.com",
             hash_password("admin123"),
-            "Nguyễn Văn Admin",
+            "Nguyễn Thế Phương",
             "admin",
             "/static/image/phuong.jpg",
             "0912345678",
-            "Hà Nội, Việt Nam"
+            "TP.HCM, Việt Nam"
         ))
         
         cursor.execute('''
@@ -250,9 +250,9 @@ def create_initial_data():
         ''', (
             "staff@warehouse.com",
             hash_password("staff123"),
-            "Trần Văn Nhân viên",
+            "Đặng Văn Nhật Thanh",
             "staff",
-            "/static/image/Thanh.png",
+            "/static/image/Thanh.jpg",
             "0987654321",
             "TP.HCM, Việt Nam"
         ))
@@ -260,6 +260,7 @@ def create_initial_data():
     else:
         # Cập nhật avatar admin nếu tài khoản đã tồn tại
         cursor.execute("UPDATE users SET avatar = ? WHERE email = ?", ("/static/image/phuong.jpg", "admin@warehouse.com"))
+        cursor.execute("UPDATE users SET avatar = ? WHERE email = ?", ("/static/image/Thanh.jpg", "staff@warehouse.com"))
     
     cursor.execute("SELECT COUNT(*) FROM products")
     if cursor.fetchone()[0] == 0:
