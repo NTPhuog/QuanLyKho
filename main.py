@@ -101,7 +101,7 @@ def get_db_connection():
 
 # ===== DATABASE SETUP =====
 def init_db():
-    # Không cần os.makedirs('data') ở đây nữa vì đã xử lý ở trên
+
     
     try:
         conn = get_db_connection()
@@ -110,13 +110,7 @@ def init_db():
         return
 
     cursor = conn.cursor()
-    
-    # Xóa bảng cũ nếu tồn tại và tạo mới
-    # cursor.execute('DROP TABLE IF EXISTS transactions')
-    # cursor.execute('DROP TABLE IF EXISTS products')
-    # cursor.execute('DROP TABLE IF EXISTS users')
-    
-    # Users table - ĐẦY ĐỦ CÁC CỘT
+    # Users table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
